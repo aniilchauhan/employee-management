@@ -46,6 +46,18 @@ export function makeServer({ environment = "development" } = {}) {
         );
       });
 
+      // Get an employee by ID
+      this.get("/employees/:id", (schema:any, request) => {
+        const { id } = request.params;
+        const employee = schema.employees.find(id);
+
+        if (employee) {
+          return employee;
+        } else {
+          return new Response(404, {}, { error: "Employee not found" });
+        }
+      });
+
       // Update an existing employee
       this.put("/employees/:id", (schema: any, request) => {
         const { id } = request.params;

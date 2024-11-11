@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import Grid from "@mui/material/Grid";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
-import { Delete, Edit, Search, Visibility } from "@mui/icons-material";
+import { Delete, Edit, Visibility } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-import { Button, Box, IconButton } from "@mui/material";
+import { Button, Box, IconButton, Typography } from "@mui/material";
 import ConfirmationModal from "../modals/ConfirmationModal";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../redux/store";
@@ -14,25 +14,24 @@ const EmployeeList: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<number | null>(null);
   const { employees } = useSelector((state: RootState) => state.employee);
 
   useEffect(() => {
-    const fetchEmployees = async () => {
-      setIsLoading(true);
-      try {
-        const response = await axios.get('/api/employees');
-        dispatch(setEmployees(response.data.employees));
-      } catch (error) {
-        dispatch(setEmployees([]));
-      } finally {
-        setIsLoading(false);
-      }
+    const fetchEmployees = () => {
+      axios.get('/api/employees')
+        .then(response => {
+          dispatch(setEmployees(response.data.employees));
+        })
+        .catch(error => {
+          dispatch(setEmployees([]));
+        })
+        .finally(() => {
+        });
     };
-
+  
     fetchEmployees();
-  }, []);
+  }, []);  
 
   const columns: GridColDef[] = [
     {
@@ -98,8 +97,6 @@ const EmployeeList: React.FC = () => {
   const handleDelete = async () => {
     if (itemToDelete === null) return;
 
-    setIsLoading(true);
-
     try {
       const response = await axios.delete(`/api/employees/${itemToDelete}`);
       if (response.status === 204) {
@@ -115,7 +112,6 @@ const EmployeeList: React.FC = () => {
     } catch (error) {
       console.error("Error deleting employee:", error);
     } finally {
-      setIsLoading(false);
     }
   };
 
@@ -144,6 +140,7 @@ const EmployeeList: React.FC = () => {
       />
       <Box>
         <Grid container justifyContent="space-between" style={{ marginBottom: "20px" }}>
+          <Typography variant="h4" sx={{fontWeight:"bold"}}>Employees Table</Typography>
           <Grid item>
             <Button
               variant="contained"

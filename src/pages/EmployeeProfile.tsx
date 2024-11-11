@@ -4,14 +4,25 @@ import { Typography, Box } from "@mui/material";
 import { Employee } from "../types/employeeTypes";
 import { RootState } from "../redux/store";
 import { useSelector } from "react-redux";
+import axios from "axios";
 
 const EmployeeProfile: React.FC = () => {
   const { employeeId } = useParams(); // Typing the id from useParams
   const [user, setUser] = useState<Employee | null>(null); // Typing user state
   const { employees } = useSelector((state: RootState) => state.employee);
+
   useEffect(() => {
-    const currentEmployee = employees.find((data, index) => data.id == employeeId);
-    setUser(currentEmployee || null); // If no user is found, set null
+    const fetchEmployee = async () => {
+      try {
+        const response = await axios.get(`/api/employees/${employeeId}`);
+        setUser({ ...response.data.employee });
+      } catch (error) {
+        setUser(null)
+      } finally {
+      }
+    };
+
+    fetchEmployee();
   }, [employeeId]);
 
   return (

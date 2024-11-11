@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { TextField, Grid, Box, Typography, Button } from "@mui/material";
-import { EmployeeFormData, FormErrors } from '../types/employeeTypes';
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
-import { clearForm, setEmployees, setErrors, setFormData } from "../redux/slices/EmployeeSlice";
+import { clearForm, setErrors, setFormData } from "../redux/slices/EmployeeSlice";
 import { RootState } from "../redux/store";
+import axios from "axios";
 
 const EmployeeForm: React.FC<{ action: "create" | "edit" }> = ({ action }) => {
   const dispatch = useDispatch();
@@ -26,11 +26,31 @@ const EmployeeForm: React.FC<{ action: "create" | "edit" }> = ({ action }) => {
       if (currentEmployee) {
         dispatch(setFormData({ ...currentEmployee, id: undefined }));
       }
+      
     }
-    return () => {
-      dispatch(clearForm())
-    }
+   
   }, [employeeId, action]);
+
+  useEffect(() => {
+    const fetchEmployee = () => {
+      axios.get(`/api/employees/${employeeId}`)
+        .then(response => {
+          dispatch(setFormData({ ...response.data.employee, id: undefined }));
+        })
+        .catch(error => {
+          console.log("errr");
+        })
+        .finally(() => {
+
+        });
+    };
+  
+    fetchEmployee();
+    return () => {
+      dispatch(clearForm());
+    };
+  }, [employeeId, action]);
+  
 
   const handleSubmit = async () => {
     const { name, email, phoneNumber, address } = formData;
@@ -64,48 +84,45 @@ const EmployeeForm: React.FC<{ action: "create" | "edit" }> = ({ action }) => {
     const data = { name, email, phoneNumber, address };
 
     try {
-      if (action === "edit" && employeeId) {
-        // Update employee API call
-        const response = await fetch(`/api/employees/${employeeId}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(data),
-        });
-
-        if (response.ok) {
-          const updatedEmployee = await response.json();
-          const updatedEmployees = employees.map((emp) => (emp.id === updatedEmployee.id ? updatedEmployee : emp));
-          dispatch(setEmployees(updatedEmployees));
+  if (action === "edit" && employeeId) {
+    // Update employee API call
+    axios.put(`/api/employees/${employeeId}`, data)
+      .then(response => {
+        if (response.status === 200) {
           navigate("/");
         } else {
           throw new Error("Failed to update employee");
         }
-      } else {
-        // Create new employee API call
-        const response = await fetch('/api/employees', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(data),
-        });
-
-        if (response.ok) {
-          const newEmployee = await response.json();
-          dispatch(setEmployees([...employees, newEmployee]));
+      })
+      .catch(error => {
+        console.error("Error:", error);
+        dispatch(setErrors({ form: "An error occurred while saving the employee data." }));
+      })
+      .finally(() => {
+        dispatch(clearForm());
+      });
+  } else {
+    // Create new employee API call
+    axios.post('/api/employees', data)
+      .then(response => {
+        if (response.status === 201) {
           navigate("/");
         } else {
           throw new Error("Failed to create employee");
         }
-      }
-    } catch (error) {
-      console.error("Error:", error);
-      dispatch(setErrors({ form: "An error occurred while saving the employee data." }));
-    } finally {
-      dispatch(clearForm());
-    }
+      })
+      .catch(error => {
+        console.error("Error:", error);
+        dispatch(setErrors({ form: "An error occurred while saving the employee data." }));
+      })
+      .finally(() => {
+        dispatch(clearForm());
+      });
+  }
+} catch (error) {
+      console.log(error)
+}
+
   };
 
   return (
